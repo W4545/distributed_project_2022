@@ -10,6 +10,7 @@ public class SThread extends Thread
    private BufferedReader in; // reader (for reading from the machine connected to)
 	private String inputLine, outputLine, destination, addr; // communication strings
 	private Socket outSocket; // socket for communicating with a destination
+	private Socket inSocket;
 	private int ind; // indext in the routing table
 
 	// Constructor
@@ -17,6 +18,7 @@ public class SThread extends Thread
 	{
 			out = new PrintWriter(toClient.getOutputStream(), true);
 			in = new BufferedReader(new InputStreamReader(toClient.getInputStream()));
+			inSocket = toClient;
 			RTable = Table;
 			addr = toClient.getInetAddress().getHostAddress();
 			RTable[index][0] = addr; // IP addresses 
@@ -54,6 +56,29 @@ public class SThread extends Thread
 		// Communication loop	
 		while ((inputLine = in.readLine()) != null) {
             System.out.println("Client/Server said: " + inputLine);
+
+			if (inputLine.contains("STARTFILE")) {
+
+				outTo.println(inputLine);
+				DataInputStream dataInputStream = new DataInputStream(inSocket.getInputStream());
+				DataOutputStream dataOutputSteam = new DataOutputStream(outSocket.getOutputStream());
+				long fileSize = dataInputStream.readLong();
+				dataOutputSteam.writeLong(fileSize);
+
+				byte[] buffer = new byte[8 * 1024];
+				int dataReceived = 0;
+
+				while (fileSize > 0 && (dataReceived = dataInputStream.read(buffer, 0, (int) Math.min(buffer.length, fileSize))) != -1) {
+					dataOutputSteam.write(buffer, 0, dataReceived);
+
+					fileSize -= dataReceived;
+				}
+
+
+				dataInputStream.close();
+				dataOutputSteam.close();
+			}
+
             if (inputLine.equals("Bye.")) // exit statement
 					break;
             outputLine = inputLine; // passes the input from the machine to the output string for the destination

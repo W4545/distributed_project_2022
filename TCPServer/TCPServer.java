@@ -48,6 +48,27 @@ public class TCPServer {
         // Communication while loop
         while ((fromClient = in.readLine()) != null) {
             System.out.println("Client said: " + fromClient);
+
+            if (fromClient.contains("STARTFILE")) {
+
+                FileOutputStream fileOutputStream = new FileOutputStream(dialog.getFiles()[0].getParentFile().getPath() + fromClient.substring(fromClient.indexOf(' ')));
+
+                DataInputStream dataInputStream = new DataInputStream(Socket.getInputStream());
+                long fileSize = dataInputStream.readLong();
+
+                byte[] buffer = new byte[8 * 1024];
+                int dataReceived = 0;
+
+                while (fileSize > 0 && (dataReceived = dataInputStream.read(buffer, 0, (int) Math.min(buffer.length, fileSize))) != -1) {
+                    fileOutputStream.write(buffer, 0, dataReceived);
+
+                    fileSize -= dataReceived;
+                }
+
+                fileOutputStream.close();
+                dataInputStream.close();
+            }
+
             if (fromClient.equals("Bye.")) // exit statement
                 break;
             fromServer = fromClient.toUpperCase(); // converting received message to upper case

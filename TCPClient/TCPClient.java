@@ -65,12 +65,30 @@ public class TCPClient {
             t = t1 - t0;
             System.out.println("Cycle time: " + t);
 
-            fromUser = fromFile.readLine(); // reading strings from a file
-            if (fromUser != null) {
-                System.out.println("Client: " + fromUser);
-                out.println(fromUser); // sending the strings to the Server via ServerRouter
-                t0 = System.currentTimeMillis();
+            DataOutputStream dataOutputStream = new DataOutputStream(Socket.getOutputStream());
+            FileInputStream fileInputStream = new FileInputStream(dialog.getFiles()[0]);
+
+
+            long fileSize = dialog.getFiles()[0].length();
+            dataOutputStream.writeLong(fileSize);
+
+            byte[] buffer = new byte[8 * 1024];
+            int dataReceived = 0;
+
+            while (fileSize > 0 && (dataReceived = fileInputStream.read(buffer, 0, (int) Math.min(buffer.length, fileSize))) != -1) {
+                dataOutputStream.write(buffer, 0, dataReceived);
+
+                fileSize -= dataReceived;
             }
+
+            fileInputStream.close();
+            dataOutputStream.close();
+//            fromUser = fromFile.readLine(); // reading strings from a file
+//            if (fromUser != null) {
+//                System.out.println("Client: " + fromUser);
+//                out.println(fromUser); // sending the strings to the Server via ServerRouter
+//                t0 = System.currentTimeMillis();
+//            }
         }
 
         // closing connections
