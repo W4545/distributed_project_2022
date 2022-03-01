@@ -73,6 +73,7 @@ public class TCPServer {
                 fileOutputStream.close();
 
                 out.println("Bye.");
+                break;
             } else {
                 if (fromClient.equals("Bye.")) // exit statement
                     break;
