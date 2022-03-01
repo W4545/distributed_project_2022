@@ -74,9 +74,6 @@ public class SThread extends Thread
 					fileSize -= dataReceived;
 				}
 
-
-				dataInputStream.close();
-				dataOutputSteam.close();
 			}
 
             if (inputLine.equals("Bye.")) // exit statement
