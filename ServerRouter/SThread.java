@@ -74,15 +74,15 @@ public class SThread extends Thread
 					fileSize -= dataReceived;
 				}
 
-			}
-
-            if (inputLine.equals("Bye.")) // exit statement
+			} else {
+				if (inputLine.equals("Bye.")) // exit statement
 					break;
-            outputLine = inputLine; // passes the input from the machine to the output string for the destination
-				
-				if ( outSocket != null){				
-				outTo.println(outputLine); // writes to the destination
-				}			
+				outputLine = inputLine; // passes the input from the machine to the output string for the destination
+
+				if ( outSocket != null){
+					outTo.println(outputLine); // writes to the destination
+				}
+			}
        }// end while		 
 		 }// end try
 			catch (IOException e) {

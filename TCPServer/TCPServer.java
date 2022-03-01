@@ -52,7 +52,7 @@ public class TCPServer {
             if (fromClient.contains("STARTFILE")) {
 
                 System.out.println(dialog.getFiles()[0].getParentFile().getPath() + fromClient.substring(fromClient.indexOf(' ')));
-                FileOutputStream fileOutputStream = new FileOutputStream(dialog.getFiles()[0].getParentFile().getPath() + fromClient.substring(fromClient.indexOf(' ')));
+                FileOutputStream fileOutputStream = new FileOutputStream(dialog.getFiles()[0].getParentFile() + "\\" + fromClient.substring(fromClient.indexOf(' ')));
 
                 DataInputStream dataInputStream = new DataInputStream(Socket.getInputStream());
                 long fileSize = dataInputStream.readLong();
@@ -67,13 +67,17 @@ public class TCPServer {
                 }
 
                 fileOutputStream.close();
+            } else {
+                if (fromClient.equals("Bye.")) // exit statement
+                    break;
+                fromServer = fromClient.toUpperCase(); // converting received message to upper case
+                System.out.println("Server said: " + fromServer);
+
+
+                out.println(fromServer); // sending the converted message back to the Client via ServerRouter
             }
 
-            if (fromClient.equals("Bye.")) // exit statement
-                break;
-            fromServer = fromClient.toUpperCase(); // converting received message to upper case
-            System.out.println("Server said: " + fromServer);
-            out.println(fromServer); // sending the converted message back to the Client via ServerRouter
+
         }
 
         // closing connections
