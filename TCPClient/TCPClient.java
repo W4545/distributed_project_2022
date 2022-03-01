@@ -82,6 +82,7 @@ public class TCPClient {
                 fileSize -= dataReceived;
             }
 
+            fileInputStream.close();
 //            fromUser = fromFile.readLine(); // reading strings from a file
 //            if (fromUser != null) {
 //                System.out.println("Client: " + fromUser);

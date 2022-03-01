@@ -51,6 +51,7 @@ public class TCPServer {
 
             if (fromClient.contains("STARTFILE")) {
 
+                System.out.println(dialog.getFiles()[0].getParentFile().getPath() + fromClient.substring(fromClient.indexOf(' ')));
                 FileOutputStream fileOutputStream = new FileOutputStream(dialog.getFiles()[0].getParentFile().getPath() + fromClient.substring(fromClient.indexOf(' ')));
 
                 DataInputStream dataInputStream = new DataInputStream(Socket.getInputStream());
@@ -64,6 +65,8 @@ public class TCPServer {
 
                     fileSize -= dataReceived;
                 }
+
+                fileOutputStream.close();
             }
 
             if (fromClient.equals("Bye.")) // exit statement
