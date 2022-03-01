@@ -58,6 +58,7 @@ public class TCPClient {
 
         int sendCount = 0;
 
+
         // Communication while loop
         while ((fromServer = in.readLine()) != null) {
             System.out.println("Server: " + fromServer);
@@ -98,5 +99,6 @@ public class TCPClient {
         out.close();
         in.close();
         Socket.close();
+        dialog.dispose();
     }
 }
