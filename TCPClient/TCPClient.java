@@ -56,6 +56,8 @@ public class TCPClient {
         out.println(host); // Client sends the IP of its machine as initial send
         t0 = System.currentTimeMillis();
 
+        int sendCount = 0;
+
         // Communication while loop
         while ((fromServer = in.readLine()) != null) {
             System.out.println("Server: " + fromServer);
@@ -69,7 +71,8 @@ public class TCPClient {
             FileInputStream fileInputStream = new FileInputStream(dialog.getFiles()[0]);
 
 
-            out.println("STARTFILE " + dialog.getFiles()[0].getName());
+            sendCount += 1;
+            out.println("STARTFILE " + sendCount + dialog.getFiles()[0].getName());
             long fileSize = dialog.getFiles()[0].length();
             dataOutputStream.writeLong(fileSize);
 
