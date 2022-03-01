@@ -1,7 +1,6 @@
 import java.io.*;
 import java.net.*;
 import java.lang.Exception;
-import java.nio.charset.StandardCharsets;
 
 	
 public class SThread extends Thread 
@@ -76,14 +75,15 @@ public class SThread extends Thread
 				}
 
 
+				dataInputStream.close();
+				dataOutputSteam.close();
 			}
 
             if (inputLine.equals("Bye.")) // exit statement
 					break;
             outputLine = inputLine; // passes the input from the machine to the output string for the destination
 				
-				if ( outSocket != null){
-					outputLine.getBytes(StandardCharsets.UTF_8);
+				if ( outSocket != null){				
 				outTo.println(outputLine); // writes to the destination
 				}			
        }// end while		 

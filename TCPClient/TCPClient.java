@@ -1,3 +1,5 @@
+import javax.swing.*;
+import java.awt.*;
 import java.io.*;
 import java.net.*;
 import java.util.Properties;
@@ -6,14 +8,12 @@ public class TCPClient {
     public static void main(String[] args) throws IOException {
         Properties config = new Properties();
 
-//        FileDialog dialog = new FileDialog((Frame) null);
-//        dialog.setTitle("Select Client Settings File file");
-//        dialog.setVisible(true);
-//
-//        config.load(new FileInputStream(dialog.getFiles()[0]));
+        FileDialog dialog = new FileDialog((Frame) null);
+        dialog.setTitle("Select Client Settings File file");
+        dialog.setVisible(true);
 
-        config.setProperty("routerIP", "192.168.1.140");
-        config.setProperty("serverIP", "75.1.16.53");
+        config.load(new FileInputStream(dialog.getFiles()[0]));
+
         // Variables for setting up connection and communication
         Socket Socket = null; // socket to connect with ServerRouter
         PrintWriter out = null; // for writing to ServerRouter
@@ -38,15 +38,12 @@ public class TCPClient {
 
         // Variables for message passing
 
-//        dialog.setTitle("Select file to transfer");
-//        dialog.setVisible(true);
-//
-//
-//        Reader reader = new FileReader(dialog.getFiles()[0]);
+        dialog.setTitle("Select file to transfer");
+        dialog.setVisible(true);
 
 
-        BufferedReader fromFile = new BufferedReader(new StringReader("Hello World\nBye.")); // reader for the string file
-
+        Reader reader = new FileReader(dialog.getFiles()[0]);
+        BufferedReader fromFile = new BufferedReader(reader); // reader for the string file
         String fromServer; // messages received from ServerRouter
         String fromUser; // messages sent to ServerRouter
         String address = config.getProperty("serverIP"); // destination IP (Server)
@@ -69,11 +66,10 @@ public class TCPClient {
             System.out.println("Cycle time: " + t);
 
             DataOutputStream dataOutputStream = new DataOutputStream(Socket.getOutputStream());
-            FileInputStream fileInputStream = new FileInputStream("Test");
-//            FileInputStream fileInputStream = new FileInputStream(dialog.getFiles()[0]);
-//
-//
-            long fileSize = 0;
+            FileInputStream fileInputStream = new FileInputStream(dialog.getFiles()[0]);
+
+
+            long fileSize = dialog.getFiles()[0].length();
             dataOutputStream.writeLong(fileSize);
 
             byte[] buffer = new byte[8 * 1024];
@@ -85,6 +81,8 @@ public class TCPClient {
                 fileSize -= dataReceived;
             }
 
+            fileInputStream.close();
+            dataOutputStream.close();
 //            fromUser = fromFile.readLine(); // reading strings from a file
 //            if (fromUser != null) {
 //                System.out.println("Client: " + fromUser);
