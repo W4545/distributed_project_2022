@@ -25,7 +25,7 @@ public class SThread extends Thread
 			RTable[index][1] = toClient; // sockets for communication
 			ind = index;
 	}
-	
+	File logs = new File("Rtable_logs.csv");
 	// Run method (will run for each machine that connects to the ServerRouter)
 	public void run()
 	{
@@ -43,7 +43,7 @@ public class SThread extends Thread
 		catch(InterruptedException ie){
 		System.out.println("Thread interrupted");
 		}
-		
+		long t0 = System.currentTimeMillis();
 		// loops through the routing table to find the destination
 		for ( int i=0; i<10; i++) 
 				{
@@ -52,7 +52,23 @@ public class SThread extends Thread
 						System.out.println("Found destination: " + destination);
 						outTo = new PrintWriter(outSocket.getOutputStream(), true); // assigns a writer
 				}}
-		
+		long t1 = System.currentTimeMillis();
+		long t = t1 - t0;
+		File log = new File("rtable_log.csv");
+		if(log.length() > 0){
+			FileWriter logWriter = new FileWriter(log,true);
+			logWriter.write(Float.toString(t) + " ms");
+			logWriter.write("\n");
+		}
+		else
+		{
+			FileWriter logWriter = new FileWriter(log);
+			logWriter.write("Routing table look up time");
+			logWriter.write("\n");
+			logWriter.write(Float.toString(t) + " ms");
+			logWriter.write("\n");
+		}
+
 		// Communication loop	
 		while ((inputLine = in.readLine()) != null) {
             System.out.println("Client/Server said: " + inputLine);
