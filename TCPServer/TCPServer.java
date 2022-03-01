@@ -90,5 +90,6 @@ public class TCPServer {
         out.close();
         in.close();
         Socket.close();
+        dialog.dispose();
     }
 }
