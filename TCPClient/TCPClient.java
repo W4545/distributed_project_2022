@@ -69,6 +69,7 @@ public class TCPClient {
             FileInputStream fileInputStream = new FileInputStream(dialog.getFiles()[0]);
 
 
+            out.println("STARTFILE " + dialog.getFiles()[0].getName());
             long fileSize = dialog.getFiles()[0].length();
             dataOutputStream.writeLong(fileSize);
 
