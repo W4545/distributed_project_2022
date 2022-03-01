@@ -57,7 +57,7 @@ public class TCPClient {
         t0 = System.currentTimeMillis();
 
         int sendCount = 0;
-
+        File logs = new File("client_logs.csv");
 
         // Communication while loop
         while ((fromServer = in.readLine()) != null) {
@@ -66,6 +66,27 @@ public class TCPClient {
             if (fromServer.equals("Bye.")) // exit statement
                 break;
             t = t1 - t0;
+
+            if(logs.length() > 0){
+                FileWriter logWriter = new FileWriter(logs,true);
+                logWriter.write(Float.toString(t) + " ms");
+                logWriter.write(",");
+                logWriter.write(Integer.toString(fromServer.getBytes().length) + " bytes");
+                logWriter.write("/n");
+            }
+            else
+            {
+                FileWriter logWriter = new FileWriter(logs,false);
+                logWriter.write("Server to Client Transmission time");
+                logWriter.write(",");
+                logWriter.write("Server to Client Message Size");
+                logWriter.write("\n");
+                logWriter.write(Float.toString(t) + " ms");
+                logWriter.write(",");
+                logWriter.write(Integer.toString(fromServer.getBytes().length) + " bytes");
+                logWriter.write("\n");
+
+            }
             System.out.println("Cycle time: " + t);
 
             DataOutputStream dataOutputStream = new DataOutputStream(Socket.getOutputStream());
@@ -87,6 +108,7 @@ public class TCPClient {
             }
 
             fileInputStream.close();
+            t0 = System.currentTimeMillis();
 //            fromUser = fromFile.readLine(); // reading strings from a file
 //            if (fromUser != null) {
 //                System.out.println("Client: " + fromUser);
