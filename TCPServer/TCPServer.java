@@ -64,9 +64,6 @@ public class TCPServer {
 
                     fileSize -= dataReceived;
                 }
-
-                fileOutputStream.close();
-                dataInputStream.close();
             }
 
             if (fromClient.equals("Bye.")) // exit statement

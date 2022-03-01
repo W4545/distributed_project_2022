@@ -69,6 +69,7 @@ public class TCPClient {
             FileInputStream fileInputStream = new FileInputStream(dialog.getFiles()[0]);
 
 
+            out.println("STARTFILE " + dialog.getFiles()[0].getName());
             long fileSize = dialog.getFiles()[0].length();
             dataOutputStream.writeLong(fileSize);
 
@@ -81,8 +82,6 @@ public class TCPClient {
                 fileSize -= dataReceived;
             }
 
-            fileInputStream.close();
-            dataOutputStream.close();
 //            fromUser = fromFile.readLine(); // reading strings from a file
 //            if (fromUser != null) {
 //                System.out.println("Client: " + fromUser);
