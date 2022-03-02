@@ -12,9 +12,9 @@ public class TCPServer {
         {
             //If no file exists, create one and log incoming message, else log incoming message
             FileWriter logWriter = new FileWriter(logs,true);
-            logWriter.write(Float.toString(transTime) + " ms");
+            logWriter.write(Float.toString(transTime));
             logWriter.write(",");
-            logWriter.write(size + " bytes");
+            logWriter.write(String.valueOf(size));
             logWriter.write(",");
             logWriter.write(notes);
             logWriter.write("\n");
@@ -23,15 +23,15 @@ public class TCPServer {
         else
         {
             FileWriter logWriter = new FileWriter(logs,false);
-            logWriter.write("Client to Server Transmission time");
+            logWriter.write("Client to Server Transmission time (ms)");
             logWriter.write(",");
-            logWriter.write("Client to Server Message Size");
+            logWriter.write("Client to Server Message Size (bytes)");
             logWriter.write(",");
             logWriter.write("Notes");
             logWriter.write("\n");
-            logWriter.write(Float.toString(transTime) + " ms");
+            logWriter.write(Float.toString(transTime));
             logWriter.write(",");
-            logWriter.write(size + " bytes");
+            logWriter.write(String.valueOf(size));
             logWriter.write(",");
             logWriter.write(notes);
             logWriter.write("\n");

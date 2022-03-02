@@ -12,9 +12,9 @@ public class TCPClient {
 
         if(logs.length() > 0){
             FileWriter logWriter = new FileWriter(logs,true);
-            logWriter.write(Float.toString(transTime) + " ms");
+            logWriter.write(Float.toString(transTime));
             logWriter.write(",");
-            logWriter.write(size + " bytes");
+            logWriter.write(String.valueOf(size));
             logWriter.write(",");
             logWriter.write(notes);
             logWriter.write("\n");
@@ -23,15 +23,15 @@ public class TCPClient {
         else
         {
             FileWriter logWriter = new FileWriter(logs,false);
-            logWriter.write("Server to Client Transmission time");
+            logWriter.write("Server to Client Transmission time (ms)");
             logWriter.write(",");
-            logWriter.write("Server to Client Message Size");
+            logWriter.write("Server to Client Message Size (bytes)");
             logWriter.write(",");
             logWriter.write("Notes");
             logWriter.write("\n");
-            logWriter.write(Float.toString(transTime) + " ms");
+            logWriter.write(Float.toString(transTime));
             logWriter.write(",");
-            logWriter.write(size + " bytes");
+            logWriter.write(String.valueOf(size));
             logWriter.write(",");
             logWriter.write(notes);
             logWriter.write("\n");

@@ -57,16 +57,16 @@ public class SThread extends Thread
 		File log = new File("rtable_log.csv");
 		if(log.length() > 0){
 			FileWriter logWriter = new FileWriter(log,true);
-			logWriter.write(Float.toString(t) + " ms");
+			logWriter.write(Float.toString(t));
 			logWriter.write("\n");
 			logWriter.close();
 		}
 		else
 		{
 			FileWriter logWriter = new FileWriter(log);
-			logWriter.write("Routing table look up time");
+			logWriter.write("Routing table look up time (ms)");
 			logWriter.write("\n");
-			logWriter.write(Float.toString(t) + " ms");
+			logWriter.write(Float.toString(t));
 			logWriter.write("\n");
 			logWriter.close();
 		}
