@@ -96,11 +96,13 @@ public class TCPClient {
         while ((fromServer = in.readLine()) != null) {
             System.out.println("Server: " + fromServer);
             t1 = System.currentTimeMillis();
-            if (fromServer.equals("Bye.")) // exit statement
-                break;
+
             t = t1 - t0;
 
             log(t, fromServer.getBytes().length, "SERVER_MESSAGE");
+
+            if (fromServer.equals("Bye.")) // exit statement
+                break;
 
             System.out.println("Cycle time: " + t);
 

@@ -66,7 +66,7 @@ public class SThread extends Thread
 			FileWriter logWriter = new FileWriter(log);
 			logWriter.write("Routing table look up time (ms)");
 			logWriter.write("\n");
-			logWriter.write(Float.toString(t));
+			logWriter.write(String.valueOf(t));
 			logWriter.write("\n");
 			logWriter.close();
 		}

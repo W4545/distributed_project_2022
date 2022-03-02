@@ -12,7 +12,7 @@ public class TCPServer {
         {
             //If no file exists, create one and log incoming message, else log incoming message
             FileWriter logWriter = new FileWriter(logs,true);
-            logWriter.write(Float.toString(transTime));
+            logWriter.write(String.valueOf(transTime));
             logWriter.write(",");
             logWriter.write(String.valueOf(size));
             logWriter.write(",");
@@ -29,7 +29,7 @@ public class TCPServer {
             logWriter.write(",");
             logWriter.write("Notes");
             logWriter.write("\n");
-            logWriter.write(Float.toString(transTime));
+            logWriter.write(String.valueOf(transTime));
             logWriter.write(",");
             logWriter.write(String.valueOf(size));
             logWriter.write(",");
@@ -118,20 +118,22 @@ public class TCPServer {
                 }
 
                 fileOutputStream.close();
-
+                out.println("Transfer Complete.");
                 out.println("Bye.");
                 break;
             } else {
-                if (fromClient.equals("Bye.")) // exit statement
-                    break;
+
                 fromServer = fromClient.toUpperCase(); // converting received message to upper case
                 System.out.println("Server said: " + fromServer);
+
+                if (fromClient.equals("Bye.")) // exit statement
+                    break;
 
 
                 out.println(fromServer); // sending the converted message back to the Client via ServerRouter
             }
 
-
+            t0 = System.currentTimeMillis();
         }
 
         // closing connections
