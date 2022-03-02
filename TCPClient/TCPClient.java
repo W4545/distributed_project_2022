@@ -108,7 +108,8 @@ public class TCPClient {
 
             if (sendCount > 5) {
                 System.out.println("Send count reached");
-                continue;
+                out.println("Bye.");
+                break;
             }
 
             DataOutputStream dataOutputStream = new DataOutputStream(Socket.getOutputStream());
