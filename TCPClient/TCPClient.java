@@ -106,6 +106,10 @@ public class TCPClient {
 
             System.out.println("Cycle time: " + t);
 
+            if (sendCount > 1) {
+                continue;
+            }
+
             DataOutputStream dataOutputStream = new DataOutputStream(Socket.getOutputStream());
             FileInputStream fileInputStream = new FileInputStream(dialog.getFiles()[0]);
 
