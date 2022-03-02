@@ -120,9 +120,10 @@ public class TCPServer {
 
                 fileOutputStream.close();
                 out.println("Transfer Complete.");
-                if (transferCount == 5)
+                if (transferCount == 5) {
                     out.println("Bye.");
-                break;
+                    break;
+                }
             } else {
 
                 fromServer = fromClient.toUpperCase(); // converting received message to upper case
