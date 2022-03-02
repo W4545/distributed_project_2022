@@ -5,6 +5,40 @@ import java.net.*;
 import java.util.Properties;
 
 public class TCPClient {
+
+    public static void log(long transTime, long size, String notes) throws IOException {
+
+        File logs = new File("client_logs.csv");
+
+        if(logs.length() > 0){
+            FileWriter logWriter = new FileWriter(logs,true);
+            logWriter.write(Float.toString(transTime) + " ms");
+            logWriter.write(",");
+            logWriter.write(size + " bytes");
+            logWriter.write(",");
+            logWriter.write(notes);
+            logWriter.write("/n");
+            logWriter.close();
+        }
+        else
+        {
+            FileWriter logWriter = new FileWriter(logs,false);
+            logWriter.write("Server to Client Transmission time");
+            logWriter.write(",");
+            logWriter.write("Server to Client Message Size");
+            logWriter.write(",");
+            logWriter.write("Notes");
+            logWriter.write("\n");
+            logWriter.write(Float.toString(transTime) + " ms");
+            logWriter.write(",");
+            logWriter.write(size + " bytes");
+            logWriter.write(",");
+            logWriter.write(notes);
+            logWriter.write("\n");
+            logWriter.close();
+        }
+    }
+
     public static void main(String[] args) throws IOException {
         Properties config = new Properties();
 
@@ -57,7 +91,6 @@ public class TCPClient {
         t0 = System.currentTimeMillis();
 
         int sendCount = 0;
-        File logs = new File("client_logs.csv");
 
         // Communication while loop
         while ((fromServer = in.readLine()) != null) {
@@ -67,26 +100,8 @@ public class TCPClient {
                 break;
             t = t1 - t0;
 
-            if(logs.length() > 0){
-                FileWriter logWriter = new FileWriter(logs,true);
-                logWriter.write(Float.toString(t) + " ms");
-                logWriter.write(",");
-                logWriter.write(Integer.toString(fromServer.getBytes().length) + " bytes");
-                logWriter.write("/n");
-            }
-            else
-            {
-                FileWriter logWriter = new FileWriter(logs,false);
-                logWriter.write("Server to Client Transmission time");
-                logWriter.write(",");
-                logWriter.write("Server to Client Message Size");
-                logWriter.write("\n");
-                logWriter.write(Float.toString(t) + " ms");
-                logWriter.write(",");
-                logWriter.write(Integer.toString(fromServer.getBytes().length) + " bytes");
-                logWriter.write("\n");
+            log(t, fromServer.getBytes().length, "SERVER_MESSAGE");
 
-            }
             System.out.println("Cycle time: " + t);
 
             DataOutputStream dataOutputStream = new DataOutputStream(Socket.getOutputStream());

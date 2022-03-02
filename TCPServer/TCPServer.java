@@ -4,6 +4,41 @@ import java.net.*;
 import java.util.Properties;
 
 public class TCPServer {
+
+    public static void log(long transTime, long size, String notes) throws IOException {
+        File logs = new File("server_logs.csv");
+
+        if(logs.length() > 0)
+        {
+            //If no file exists, create one and log incoming message, else log incoming message
+            FileWriter logWriter = new FileWriter(logs,true);
+            logWriter.write(Float.toString(transTime) + " ms");
+            logWriter.write(",");
+            logWriter.write(size + " bytes");
+            logWriter.write(",");
+            logWriter.write(notes);
+            logWriter.write("\n");
+            logWriter.close();
+        }
+        else
+        {
+            FileWriter logWriter = new FileWriter(logs,false);
+            logWriter.write("Client to Server Transmission time");
+            logWriter.write(",");
+            logWriter.write("Client to Server Message Size");
+            logWriter.write(",");
+            logWriter.write("Notes");
+            logWriter.write("\n");
+            logWriter.write(Float.toString(transTime) + " ms");
+            logWriter.write(",");
+            logWriter.write(size + " bytes");
+            logWriter.write(",");
+            logWriter.write(notes);
+            logWriter.write("\n");
+            logWriter.close();
+        }
+    }
+
     public static void main(String[] args) throws IOException {
         Properties config = new Properties();
 
@@ -40,7 +75,7 @@ public class TCPServer {
         String fromClient; // messages received from ServerRouter
         String address = config.getProperty("clientIP"); // destination IP (Client)
         //file to ber written to
-        File logs = new File("server_logs.csv");
+
 
         // Communication process (initial sends/receives)
         out.println(address);// initial send (IP of the destination Client)
@@ -55,27 +90,7 @@ public class TCPServer {
             long t1 = System.currentTimeMillis();
             long t = t1 - t0;
 
-            if(logs.length() > 0)
-            {
-                //If no file exists, create one and log incoming message, else log incoming message
-                FileWriter logWriter = new FileWriter(logs,true);
-                logWriter.write(Float.toString(t) + " ms");
-                logWriter.write(",");
-                logWriter.write(Integer.toString(fromClient.getBytes().length) + " bytes");
-                logWriter.write("\n");
-            }
-            else
-            {
-                FileWriter logWriter = new FileWriter(logs,false);
-                logWriter.write("Client to Server Transmission time");
-                logWriter.write(",");
-                logWriter.write("Client to Server Message Size");
-                logWriter.write("\n");
-                logWriter.write(Float.toString(t) + " ms");
-                logWriter.write(",");
-                logWriter.write(Integer.toString(fromClient.getBytes().length) + " bytes");
-                logWriter.write("\n");
-            }
+            log(t, fromClient.getBytes().length, "SERVER_MESSAGE");
 
             if (fromClient.contains("STARTFILE")) {
 
@@ -91,10 +106,15 @@ public class TCPServer {
 
                 byte[] buffer = new byte[8 * 1024];
                 int dataReceived = 0;
-
+                t0 = System.currentTimeMillis();
                 while (fileSize > 0 && (dataReceived = dataInputStream.read(buffer, 0, (int) Math.min(buffer.length, fileSize))) != -1) {
+                    t1 = System.currentTimeMillis();
+
+                    t = t1 - t0;
+                    log(t, dataReceived, "FILE_TRANSFER_CHUNK");
                     fileOutputStream.write(buffer, 0, dataReceived);
                     fileSize -= dataReceived;
+                    t0 = System.currentTimeMillis();
                 }
 
                 fileOutputStream.close();

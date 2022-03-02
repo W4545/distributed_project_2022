@@ -3,7 +3,7 @@ import java.net.*;
 import java.lang.Exception;
 
 	
-public class SThread extends Thread 
+public class SThread extends Thread
 {
 	private Object [][] RTable; // routing table
 	private PrintWriter out, outTo; // writers (for writing back to the machine and to destination)
@@ -59,6 +59,7 @@ public class SThread extends Thread
 			FileWriter logWriter = new FileWriter(log,true);
 			logWriter.write(Float.toString(t) + " ms");
 			logWriter.write("\n");
+			logWriter.close();
 		}
 		else
 		{
@@ -67,6 +68,7 @@ public class SThread extends Thread
 			logWriter.write("\n");
 			logWriter.write(Float.toString(t) + " ms");
 			logWriter.write("\n");
+			logWriter.close();
 		}
 
 		// Communication loop	
