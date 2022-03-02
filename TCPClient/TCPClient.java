@@ -106,7 +106,7 @@ public class TCPClient {
 
             System.out.println("Cycle time: " + t);
 
-            if (sendCount > 1) {
+            if (sendCount > 5) {
                 continue;
             }
 

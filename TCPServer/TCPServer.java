@@ -82,6 +82,7 @@ public class TCPServer {
         fromClient = in.readLine();// initial receive from router (verification of connection)
         System.out.println("ServerRouter: " + fromClient);
 
+        int transferCount = 0;
         long t0 = System.currentTimeMillis();
 
         // Communication while loop
@@ -93,7 +94,7 @@ public class TCPServer {
             log(t, fromClient.getBytes().length, "SERVER_MESSAGE");
 
             if (fromClient.contains("STARTFILE")) {
-
+                transferCount += 1;
                 String filePath = dialog.getFiles()[0].getParentFile() + "\\" + fromClient.substring(fromClient.indexOf(' '));
                 System.out.println(filePath);
                 File file = new File(filePath);
@@ -119,7 +120,8 @@ public class TCPServer {
 
                 fileOutputStream.close();
                 out.println("Transfer Complete.");
-                out.println("Bye.");
+                if (transferCount == 5)
+                    out.println("Bye.");
                 break;
             } else {
 
