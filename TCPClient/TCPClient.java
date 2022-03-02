@@ -17,7 +17,7 @@ public class TCPClient {
             logWriter.write(size + " bytes");
             logWriter.write(",");
             logWriter.write(notes);
-            logWriter.write("/n");
+            logWriter.write("\n");
             logWriter.close();
         }
         else
