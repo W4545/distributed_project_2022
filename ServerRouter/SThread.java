@@ -1,111 +1,239 @@
 import java.io.*;
 import java.net.*;
-import java.lang.Exception;
 
-	
-public class SThread extends Thread
-{
-	private Object [][] RTable; // routing table
-	private PrintWriter out, outTo; // writers (for writing back to the machine and to destination)
-   private BufferedReader in; // reader (for reading from the machine connected to)
-	private String inputLine, outputLine, destination, addr; // communication strings
-	private Socket outSocket; // socket for communicating with a destination
-	private Socket inSocket;
-	private int ind; // indext in the routing table
 
-	// Constructor
-	SThread(Object [][] Table, Socket toClient, int index) throws IOException
-	{
-			out = new PrintWriter(toClient.getOutputStream(), true);
-			in = new BufferedReader(new InputStreamReader(toClient.getInputStream()));
-			inSocket = toClient;
-			RTable = Table;
-			addr = toClient.getInetAddress().getHostAddress();
-			RTable[index][0] = addr; // IP addresses 
-			RTable[index][1] = toClient; // sockets for communication
-			ind = index;
-	}
-	File logs = new File("Rtable_logs.csv");
-	// Run method (will run for each machine that connects to the ServerRouter)
-	public void run()
-	{
-		try
-		{
-		// Initial sends/receives
-		destination = in.readLine(); // initial read (the destination for writing)
-		System.out.println("Forwarding to " + destination);
-		out.println("Connected to the router."); // confirmation of connection
-		
-		// waits 10 seconds to let the routing table fill with all machines' information
-		try{
-    		Thread.currentThread().sleep(10000); 
-	   }
-		catch(InterruptedException ie){
-		System.out.println("Thread interrupted");
-		}
-		long t0 = System.currentTimeMillis();
-		// loops through the routing table to find the destination
-		for ( int i=0; i<10; i++) 
-				{
-					if (destination.equals((String) RTable[i][0])){
-						outSocket = (Socket) RTable[i][1]; // gets the socket for communication from the table
-						System.out.println("Found destination: " + destination);
-						outTo = new PrintWriter(outSocket.getOutputStream(), true); // assigns a writer
-				}}
-		long t1 = System.currentTimeMillis();
-		long t = t1 - t0;
-		File log = new File("rtable_log.csv");
-		if(log.length() > 0){
-			FileWriter logWriter = new FileWriter(log,true);
-			logWriter.write(Float.toString(t));
-			logWriter.write("\n");
-			logWriter.close();
-		}
-		else
-		{
-			FileWriter logWriter = new FileWriter(log);
-			logWriter.write("Routing table look up time (ms)");
-			logWriter.write("\n");
-			logWriter.write(String.valueOf(t));
-			logWriter.write("\n");
-			logWriter.close();
-		}
+public class SThread extends Thread {
+// routing table
+    private final PrintWriter socketOut;
+    private final BufferedReader socketIn; // reader (for reading from the machine connected to)
+    private final String address; // communication strings
+    private final Socket inSocket;
 
-		// Communication loop	
-		while ((inputLine = in.readLine()) != null) {
-            System.out.println("Client/Server said: " + inputLine);
+    private static final Logger commandLogger = new Logger(new File("command_exec_times.csv"), "command", "time (ms)");
 
-			if (inputLine.contains("STARTFILE")) {
+    private static final Logger messageLogger = new Logger(new File("messageLogger.csv"), "message type", "message", "message size (bytes)");
 
-				outTo.println(inputLine);
-				DataInputStream dataInputStream = new DataInputStream(inSocket.getInputStream());
-				DataOutputStream dataOutputSteam = new DataOutputStream(outSocket.getOutputStream());
-				long fileSize = dataInputStream.readLong();
-				dataOutputSteam.writeLong(fileSize);
+    private RoutingTableRecord routingTableRecord;
 
-				byte[] buffer = new byte[8 * 1024];
-				int dataReceived = 0;
+    // Constructor
+    SThread(Socket toClient) throws IOException {
+        socketOut = new PrintWriter(toClient.getOutputStream(), true);
+        socketIn = new BufferedReader(new InputStreamReader(toClient.getInputStream()));
+        inSocket = toClient;
+        address = toClient.getInetAddress().getHostAddress();
+    }
 
-				while (fileSize > 0 && (dataReceived = dataInputStream.read(buffer, 0, (int) Math.min(buffer.length, fileSize))) != -1) {
-					dataOutputSteam.write(buffer, 0, dataReceived);
+    File logs = new File("Rtable_logs.csv");
 
-					fileSize -= dataReceived;
-				}
+    // Run method (will run for each machine that connects to the ServerRouter)
+    public void run() {
 
-			} else {
-				outputLine = inputLine; // passes the input from the machine to the output string for the destination
+        try {
+            boolean run = true;
+            while (run) {
+                // Initial sends/receives
+                String command = socketIn.readLine(); // initial read (the destination for writing)
+                logMessage("COMMAND_REQUEST", command);
+                long start = System.currentTimeMillis();
+                threadPrint("Starting execution of command \"" + command + "\"");
+                if (command.contains("LOGON:")) {
+                    String[] splice = command.split(" ");
+                    String clientID = splice[1];
+                    String portNum = splice[2];
 
-				if ( outSocket != null){
-					outTo.println(outputLine); // writes to the destination
-				}
-				if (inputLine.equals("Bye.")) // exit statement
-					break;
-			}
-       }// end while		 
-		 }// end try
-			catch (IOException e) {
-               System.err.println("Could not listen to socket.");
-               System.exit(1);
-         }
-	}
+                    if (clientLookup(clientID) == null) {
+                        RoutingTableRecord routingTableRecord = new RoutingTableRecord(address, inSocket, splice[1], splice[2]);
+                        TCPServerRouter.routingTable.add(routingTableRecord);
+                        this.routingTableRecord = routingTableRecord;
+                        sendOutbound("IDGOOD");
+                    } else {
+                        sendOutbound("IDBAD");
+                    }
+                } else if (command.contains("CLIENTIPREQUEST:")) {
+                    String clientID = command.substring(command.indexOf(' ') + 1);
+
+                    if (clientID.charAt(0) == TCPServerRouter.groupID) {
+                        RoutingTableRecord routingTableRecord = clientLookup(clientID);
+
+                        if (routingTableRecord == null)
+                            sendOutbound("IPNORESPONSE");
+                        else
+                            sendOutbound("IPRESPONSE: " + routingTableRecord.getIpAddress() + " " + routingTableRecord.getListenPort());
+                    } else {
+                        executeCrossRouterConnection(clientID.charAt(0), clientID);
+                    }
+
+                } else if (command.contains("ROUTERIPREQUEST: ")) {
+                    String lookup = command.substring(command.indexOf(' ') + 1);
+
+                    RoutingTableRecord routingTableRecord = clientLookup(lookup);
+
+                    if (routingTableRecord == null)
+                        sendOutbound("IPNORESPONSE");
+                    else
+                        sendOutbound("IPRESPONSE: " + routingTableRecord.getIpAddress() + " " + routingTableRecord.getListenPort());
+                } else if (command.contains("GOODBYE")) {
+                    run = false;
+                    if (routingTableRecord != null)
+                        TCPServerRouter.routingTable.remove(routingTableRecord);
+                } else {
+                    System.out.println("Unknown command \"" + command + "\" on thread " + this.getName() + ". Ignoring");
+                }
+                long stop = System.currentTimeMillis();
+
+                long duration = stop - start;
+
+                threadPrint("Execution complete of command \"" + command + "\". Duration " + duration + "ms.");
+                synchronized (commandLogger) {
+                    commandLogger.log(command, duration);
+                }
+            }
+
+            inSocket.close();
+            threadPrint("Socket closed. ending thread execution");
+
+
+
+//            System.out.println("Forwarding to " + destination);
+//            out.println("Connected to the router."); // confirmation of connection
+//
+//            // waits 10 seconds to let the routing table fill with all machines' information
+//            try {
+//                Thread.currentThread().sleep(10000);
+//            } catch (InterruptedException ie) {
+//                System.out.println("Thread interrupted");
+//            }
+//            long t0 = System.currentTimeMillis();
+//            // loops through the routing table to find the destination
+//            for (int i = 0; i < 10; i++) {
+//                if (destination.equals((String) RTable[i][0])) {
+//                    outSocket = (Socket) RTable[i][1]; // gets the socket for communication from the table
+//                    System.out.println("Found destination: " + destination);
+//                    outTo = new PrintWriter(outSocket.getOutputStream(), true); // assigns a writer
+//                }
+//            }
+//            long t1 = System.currentTimeMillis();
+//            long t = t1 - t0;
+//            File log = new File("rtable_log.csv");
+//            if (log.length() > 0) {
+//                FileWriter logWriter = new FileWriter(log, true);
+//                logWriter.write(Float.toString(t));
+//                logWriter.write("\n");
+//                logWriter.close();
+//            } else {
+//                FileWriter logWriter = new FileWriter(log);
+//                logWriter.write("Routing table look up time (ms)");
+//                logWriter.write("\n");
+//                logWriter.write(String.valueOf(t));
+//                logWriter.write("\n");
+//                logWriter.close();
+//            }
+//
+//            // Communication loop
+//            while ((inputLine = in.readLine()) != null) {
+//                System.out.println("Client/Server said: " + inputLine);
+//
+//                if (inputLine.contains("STARTFILE")) {
+//
+//                    outTo.println(inputLine);
+//                    DataInputStream dataInputStream = new DataInputStream(inSocket.getInputStream());
+//                    DataOutputStream dataOutputSteam = new DataOutputStream(outSocket.getOutputStream());
+//                    long fileSize = dataInputStream.readLong();
+//                    dataOutputSteam.writeLong(fileSize);
+//
+//                    byte[] buffer = new byte[8 * 1024];
+//                    int dataReceived = 0;
+//
+//                    while (fileSize > 0 && (dataReceived = dataInputStream.read(buffer, 0, (int) Math.min(buffer.length, fileSize))) != -1) {
+//                        dataOutputSteam.write(buffer, 0, dataReceived);
+//
+//                        fileSize -= dataReceived;
+//                    }
+//
+//                } else {
+//                    outputLine = inputLine; // passes the input from the machine to the output string for the destination
+//
+//                    if (outSocket != null) {
+//                        outTo.println(outputLine); // writes to the destination
+//                    }
+//                    if (inputLine.equals("Bye.")) // exit statement
+//                        break;
+//                }
+//            }// end while
+
+
+        }// end try
+        catch (IOException e) {
+            threadPrintErr("Could not listen to socket. Socket closing");
+            if (!inSocket.isClosed()) {
+                try {
+                    inSocket.close();
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+            TCPServerRouter.routingTable.remove(routingTableRecord);
+        }
+    }
+
+    public RoutingTableRecord clientLookup(String clientID) {
+        for (RoutingTableRecord routingTableRecord : TCPServerRouter.routingTable) {
+            if (routingTableRecord.getClientID().equals(clientID))
+                return routingTableRecord;
+        }
+
+        return null;
+    }
+
+    public void executeCrossRouterConnection(char groupID, String clientID) {
+        for (RouterRecord routerRecord : TCPServerRouter.routerRecords) {
+            if (routerRecord.getGroupID() == groupID) {
+                try (Socket socket = new Socket(routerRecord.getIpAddress(), 5555 + (((int) groupID) - 65))) {
+                    PrintWriter printWriter = new PrintWriter(socket.getOutputStream());
+
+                    sendOutbound(printWriter, "ROUTERIPREQUEST: " + clientID);
+
+                    BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+                    String response = in.readLine();
+                    logMessage("ROUTER_RESPONSE", response);
+
+                    if (!response.contains("IPRESPONSE: ") || !response.contains("IPNORESPONSE"))
+                        throw new RuntimeException("Illegal response from cross-router connection (" + groupID + "): " + response);
+
+                    sendOutbound(response);
+
+                } catch (IOException exception) {
+                    exception.printStackTrace();
+                    sendOutbound("IPNORESPONSE");
+                }
+                return;
+            }
+        }
+        sendOutbound("IPNORESPONSE");
+        threadPrintErr("failed to find the specified client ID's server in the lookup table (" + groupID + ")");
+    }
+    public void threadPrint(String string) {
+        System.out.println(getName() + ": " + string);
+    }
+
+    public void threadPrintErr(String string) {
+        System.err.println(getName() + ": " + string);
+    }
+
+    public void sendOutbound(String string) {
+        sendOutbound(socketOut, string);
+    }
+
+    public void sendOutbound(PrintWriter printWriter, String string) {
+        printWriter.println(string);
+        logMessage("OUTBOUND", string);
+    }
+
+    public void logMessage(String messageType, String message) {
+        threadPrint("MESSAGE, " + messageType + ", " + message);
+        synchronized (messageLogger) {
+            messageLogger.log(messageType, message, message.getBytes().length);
+        }
+    }
 }

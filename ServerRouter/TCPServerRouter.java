@@ -1,40 +1,60 @@
 import java.net.*;
 import java.io.*;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
 
 public class TCPServerRouter {
+
+    public static final RouterRecord[] routerRecords = {
+
+    };
+
+    public static final List<RoutingTableRecord> routingTable = Collections.synchronizedList(new ArrayList<>());
+
+    public static volatile char groupID;
+
     public static void main(String[] args) throws IOException {
-        Socket clientSocket = null; // socket for the thread
-        Object[][] RoutingTable = new Object[10][2]; // routing table
-        int SockNum = 5555; // port number
+
+        Properties properties = new Properties();
+
+        properties.load(Files.newInputStream(new File(".\\ServerRouter\\config.properties").toPath()));
+
+        groupID = properties.getProperty("groupID").charAt(0);
+        int socketPort = 5555 + (((int) groupID) - 65); // port number
         boolean running = true;
-        int ind = 0; // indext in the routing table
 
         //Accepting connections
         ServerSocket serverSocket = null; // server socket for accepting connections
         try {
-            serverSocket = new ServerSocket(5555);
-            System.out.println("ServerRouter is Listening on port: 5555.");
+            serverSocket = new ServerSocket(socketPort);
+            System.out.println("ServerRouter is Listening on port: " + socketPort + ".");
         } catch (IOException e) {
-            System.err.println("Could not listen on port: 5555.");
+            System.err.println("Could not listen on port: " + socketPort + ".");
             System.exit(1);
         }
 
         // Creating threads with accepted connections
         while (running) {
             try {
-                clientSocket = serverSocket.accept();
-                SThread t = new SThread(RoutingTable, clientSocket, ind); // creates a thread with a random port
+                Socket clientSocket = serverSocket.accept();
+                SThread t = new SThread(clientSocket); // creates a thread with a random port
                 t.start(); // starts the thread
-                ind++; // increments the index
-                System.out.println("ServerRouter connected with Client/Server: " + clientSocket.getInetAddress().getHostAddress());
+                System.out.println("ServerRouter connected with Client/Router: " + clientSocket.getInetAddress().getHostAddress());
             } catch (IOException e) {
-                System.err.println("Client/Server failed to connect.");
+                System.err.println("Client/Router failed to connect.");
                 System.exit(1);
             }
         }//end while
 
         //closing connections
-        clientSocket.close();
+        synchronized (routingTable) {
+            for (RoutingTableRecord routingTableRecord : routingTable) {
+                routingTableRecord.getClientSocket().close();
+            }
+        }
         serverSocket.close();
 
     }
