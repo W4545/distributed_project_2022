@@ -15,17 +15,15 @@ public class Logger {
     }
 
     public void log(Object ... lines) {
-        boolean append = false;
-        if (!file.exists())
-            append = true;
+        boolean append = file.exists();
 
-        try (FileWriter fileWriter = new FileWriter(file)) {
+        try (FileWriter fileWriter = new FileWriter(file, append)) {
 
             if (lines.length == 0)
                 return;
 
             for (int i = 0; i < lines.length - 1; i++) {
-                fileWriter.write(lines[0].toString());
+                fileWriter.write(lines[i].toString());
                 fileWriter.write(",");
             }
             fileWriter.write(lines[lines.length - 1].toString());

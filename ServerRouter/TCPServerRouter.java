@@ -9,7 +9,7 @@ import java.util.Properties;
 public class TCPServerRouter {
 
     public static final RouterRecord[] routerRecords = {
-
+            new RouterRecord('B', "192.168.1.227")
     };
 
     public static final List<RoutingTableRecord> routingTable = Collections.synchronizedList(new ArrayList<>());

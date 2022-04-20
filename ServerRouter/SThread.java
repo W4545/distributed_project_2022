@@ -41,8 +41,8 @@ public class SThread extends Thread {
                     String clientID = splice[1];
                     String portNum = splice[2];
 
-                    if (clientLookup(clientID) == null) {
-                        RoutingTableRecord routingTableRecord = new RoutingTableRecord(address, inSocket, splice[1], splice[2]);
+                    if (clientID.charAt(0) == TCPServerRouter.groupID && clientLookup(clientID) == null) {
+                        RoutingTableRecord routingTableRecord = new RoutingTableRecord(address, inSocket, clientID, portNum);
                         TCPServerRouter.routingTable.add(routingTableRecord);
                         this.routingTableRecord = routingTableRecord;
                         sendOutbound("IDGOOD");
@@ -189,7 +189,7 @@ public class SThread extends Thread {
         for (RouterRecord routerRecord : TCPServerRouter.routerRecords) {
             if (routerRecord.getGroupID() == groupID) {
                 try (Socket socket = new Socket(routerRecord.getIpAddress(), 5555 + (((int) groupID) - 65))) {
-                    PrintWriter printWriter = new PrintWriter(socket.getOutputStream());
+                    PrintWriter printWriter = new PrintWriter(socket.getOutputStream(), true);
 
                     sendOutbound(printWriter, "ROUTERIPREQUEST: " + clientID);
 
@@ -198,11 +198,11 @@ public class SThread extends Thread {
                     String response = in.readLine();
                     logMessage("ROUTER_RESPONSE", response);
 
-                    if (!response.contains("IPRESPONSE: ") || !response.contains("IPNORESPONSE"))
+                    if (!response.contains("IPRESPONSE: ") && !response.contains("IPNORESPONSE"))
                         throw new RuntimeException("Illegal response from cross-router connection (" + groupID + "): " + response);
 
                     sendOutbound(response);
-
+                    sendOutbound(printWriter, "GOODBYE");
                 } catch (IOException exception) {
                     exception.printStackTrace();
                     sendOutbound("IPNORESPONSE");
