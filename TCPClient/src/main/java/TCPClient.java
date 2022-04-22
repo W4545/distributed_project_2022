@@ -127,6 +127,7 @@ public class TCPClient {
         String destinationID = config.getProperty("destinationID").toString();
 
         int SockNum = 5555 + (groupID.charAt(0) - 65); // ROUTERPORTNUM port number
+        int clientPort = 35415;
 
         // Tries to connect to the ServerRouter
         try {
@@ -159,11 +160,12 @@ public class TCPClient {
                 //portnum is parsed from after the second space
 
 
+                Socket dataSendSocket = null;
                 //open communication with other client
                 try {
-                    Socket = new Socket(clientIP, Integer.parseInt(portNum));
-                    clientOut = new PrintWriter(Socket.getOutputStream(), true);
-                    clientIn = new BufferedReader(new InputStreamReader(Socket.getInputStream()));
+                    dataSendSocket = new Socket(clientIP, Integer.parseInt(portNum));
+                    clientOut = new PrintWriter(dataSendSocket.getOutputStream(), true);
+                    clientIn = new BufferedReader(new InputStreamReader(dataSendSocket.getInputStream()));
 
                 } catch (UnknownHostException e) {
                     System.err.println("Don't know about requested client: " + clientIP);
@@ -226,6 +228,7 @@ public class TCPClient {
                     //t0 = System.currentTimeMillis();
                 }
                 //close connections
+                dataSendSocket.close();
                 Socket.close();
             } else { //else this client is listening
 
@@ -233,6 +236,8 @@ public class TCPClient {
                 ServerSocket serverSocket = null; // server socket for accepting connections
                 Socket clientSocket = null;
                 boolean running = true;
+
+
 
                 try {
                     serverSocket = new ServerSocket(SockNum);
@@ -249,6 +254,10 @@ public class TCPClient {
                 while (running) {
                     try {
                         clientSocket = serverSocket.accept();
+                        System.out.println("Socket connected: ");
+
+                        clientOut = new PrintWriter(clientSocket.getOutputStream(), true);
+                        clientIn = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
                         // Communication while loop
                         while ((fromClient = clientIn.readLine()) != null) {
