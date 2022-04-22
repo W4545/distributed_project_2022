@@ -148,7 +148,7 @@ public class TCPClient {
             PrintWriter clientOut = null;
             BufferedReader clientIn = null;
 
-            if (config.getProperty("status").toString() != "listening") //if client is requesting
+            if (!config.getProperty("status").equals("listening")) //if client is requesting
             {
                 sendRequest(destinationID, out);//request destinationID to server-router
                 String otherClientLocation = getResponse(in); //expects destinationIP and portnumber
