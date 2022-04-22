@@ -5,37 +5,6 @@ import java.util.*;
 
 public class TCPClient {
 
-    public static void log(long transTime, long size, String notes) throws IOException {
-
-        File logs = new File("client_logs.csv");
-
-        if (logs.length() > 0) {
-            FileWriter logWriter = new FileWriter(logs, true);
-            logWriter.write(Float.toString(transTime));
-            logWriter.write(",");
-            logWriter.write(String.valueOf(size));
-            logWriter.write(",");
-            logWriter.write(notes);
-            logWriter.write("\n");
-            logWriter.close();
-        } else {
-            FileWriter logWriter = new FileWriter(logs, false);
-            logWriter.write("Server to Client Transmission time (ms)");
-            logWriter.write(",");
-            logWriter.write("Server to Client Message Size (bytes)");
-            logWriter.write(",");
-            logWriter.write("Notes");
-            logWriter.write("\n");
-            logWriter.write(Float.toString(transTime));
-            logWriter.write(",");
-            logWriter.write(String.valueOf(size));
-            logWriter.write(",");
-            logWriter.write(notes);
-            logWriter.write("\n");
-            logWriter.close();
-        }
-    }
-
     /**
      * @param myID
      * @param portNum
@@ -94,12 +63,14 @@ public class TCPClient {
         dialog.setTitle("Select Client Settings File file");
         dialog.setVisible(true);
 
+        String storeLocation = dialog.getFiles()[0].getParent();
+
         config.load(new FileInputStream(dialog.getFiles()[0]));
 
         // Variables for setting up connection and communication
-        Socket Socket = null; // socket to connect with ServerRouter
-        PrintWriter out = null; // for writing to ServerRouter
-        BufferedReader in = null; // for reading form ServerRouter
+        Socket routerSocket = null; // socket to connect with ServerRouter
+        PrintWriter routerOut = null; // for writing to ServerRouter
+        BufferedReader routerIn = null; // for reading form ServerRouter
         InetAddress addr = InetAddress.getLocalHost();
         String host = addr.getHostAddress(); // Client machine's IP
         String routerName = config.getProperty("routerIP"); // ServerRouter host name
@@ -112,9 +83,9 @@ public class TCPClient {
 
         // Tries to connect to the ServerRouter
         try {
-            Socket = new Socket(routerName, SockNum);
-            out = new PrintWriter(Socket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(Socket.getInputStream()));
+            routerSocket = new Socket(routerName, SockNum);
+            routerOut = new PrintWriter(routerSocket.getOutputStream(), true);
+            routerIn = new BufferedReader(new InputStreamReader(routerSocket.getInputStream()));
 
         } catch (UnknownHostException e) {
             System.err.println("Don't know about router: " + routerName);
@@ -124,112 +95,108 @@ public class TCPClient {
             System.exit(1);
         }
 
-        logOn(myID, clientPort, out); //begin logon process
-        if (logOnStatus(in) == true) //if IDGOOD
+        logOn(myID, clientPort, routerOut); //begin logon process
+        if (logOnStatus(routerIn) == true) //if IDGOOD
         {
-            PrintWriter clientOut = null;
-            BufferedReader clientIn = null;
+
 
             if (!config.getProperty("status").equals("listening")) //if client is requesting
             {
-                sendRequest(destinationID, out);//request destinationID to server-router
-                String otherClientLocation = getResponse(in); //expects destinationIP and portnumber
-
-                String[] split = otherClientLocation.split(" ");
-                String clientIP = split[1];
-                //clientIP is parsed from first space, to second space
-                String portNum = split[2];
-                //portnum is parsed from after the second space
-
-
-                Socket dataSendSocket = null;
-                //open communication with other client
-                try {
-                    dataSendSocket = new Socket(clientIP, Integer.parseInt(portNum));
-                    clientOut = new PrintWriter(dataSendSocket.getOutputStream(), true);
-                    clientIn = new BufferedReader(new InputStreamReader(dataSendSocket.getInputStream()));
-
-                } catch (UnknownHostException e) {
-                    System.err.println("Don't know about requested client: " + clientIP);
-                    System.exit(1);
-                } catch (IOException e) {
-                    System.err.println("Couldn't get I/O for the connection to: " + clientIP);
-                    System.exit(1);
-                }
-
-                //variables for message passing
-                dialog.setTitle("Select file to transfer");
-                dialog.setVisible(true);
-
-
-                Reader reader = new FileReader(dialog.getFiles()[0]);
-                BufferedReader fromFile = new BufferedReader(reader); // reader for the string file
-
-                String fromClient; //messages sent from other client
-                String fromThis; // messages sent to Client
-
-
-                fromClient = clientIn.readLine();
-
-                System.out.println("Other Client said: " + fromClient);
-
-                //log(t, fromClient.getBytes().length, "OTHER_CLIENT_MESSAGE");
-
-
-                //System.out.println("Cycle time: " + t);
-
-
-                DataOutputStream dataOutputStream = new DataOutputStream(dataSendSocket.getOutputStream());
-                FileInputStream fileInputStream = new FileInputStream(dialog.getFiles()[0]);
-
-
-                clientOut.println("STARTFILE " + dialog.getFiles()[0].getName());
-                long fileSize = dialog.getFiles()[0].length();
-                dataOutputStream.writeLong(fileSize);
-
-                byte[] buffer = new byte[8 * 1024];
-                int dataReceived = 0;
-
-                while (fileSize > 0 && (dataReceived = fileInputStream.read(buffer, 0, (int) Math.min(buffer.length, fileSize))) != -1) {
-                    dataOutputStream.write(buffer, 0, dataReceived);
-
-                    fileSize -= dataReceived;
-                }
-
-                dataOutputStream.flush();
-                fileInputStream.close();
-                //t0 = System.currentTimeMillis();
-                //close connections
-                dataSendSocket.close();
-                Socket.close();
+                executeFileSend(destinationID, routerOut, routerIn);
             } else { //else this client is listening
 
-                //Accepting connections
-                ServerSocket serverSocket = null; // server socket for accepting connections
-                Socket clientSocket = null;
-                boolean running = true;
+            }
+        }
+
+        routerSocket.close();
+    }
+
+    public static void executeFileSend(String destinationID, PrintWriter routerOut, BufferedReader routerIn) {
+        PrintWriter clientOut = null;
+        BufferedReader clientIn = null;
+
+        sendRequest(destinationID, routerOut);//request destinationID to server-router
+        String otherClientLocation = null; //expects destinationIP and portnumber
+        try {
+            otherClientLocation = getResponse(routerIn);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        String[] split = otherClientLocation.split(" ");
+        String clientIP = split[1];
+        //clientIP is parsed from first space, to second space
+        String portNum = split[2];
+        //portnum is parsed from after the second space
 
 
-                try {
-                    serverSocket = new ServerSocket(clientPort);
-                    System.out.println("This Client is Listening on port: " + String.valueOf(clientPort));
-                } catch (IOException e) {
-                    System.err.println("Could not listen on port: " + String.valueOf(clientPort));
-                    System.exit(1);
-                }
-                String fromClient;
-                String fromMe;
-                int transferCount = 0;
+        try (Socket dataSendSocket = new Socket(clientIP, Integer.parseInt(portNum))) {
+            clientOut = new PrintWriter(dataSendSocket.getOutputStream(), true);
+            clientIn = new BufferedReader(new InputStreamReader(dataSendSocket.getInputStream()));
 
-                clientSocket = serverSocket.accept();
+
+            FileDialog dialog = new FileDialog((Frame) null);
+
+            //variables for message passing
+            dialog.setTitle("Select file to transfer");
+            dialog.setVisible(true);
+
+            dialog.dispose();
+
+
+            String fromClient; //messages sent from other client
+            String fromThis; // messages sent to Client
+
+
+            fromClient = clientIn.readLine();
+
+            System.out.println("Other Client said: " + fromClient);
+
+            DataOutputStream dataOutputStream = new DataOutputStream(dataSendSocket.getOutputStream());
+            FileInputStream fileInputStream = new FileInputStream(dialog.getFiles()[0]);
+
+
+            clientOut.println("STARTFILE " + dialog.getFiles()[0].getName());
+            long fileSize = dialog.getFiles()[0].length();
+            dataOutputStream.writeLong(fileSize);
+
+            byte[] buffer = new byte[8 * 1024];
+            int dataReceived = 0;
+
+            while (fileSize > 0 && (dataReceived = fileInputStream.read(buffer, 0, (int) Math.min(buffer.length, fileSize))) != -1) {
+                dataOutputStream.write(buffer, 0, dataReceived);
+
+                fileSize -= dataReceived;
+            }
+
+            dataOutputStream.flush();
+            fileInputStream.close();
+            //t0 = System.currentTimeMillis();
+            //close connections
+        } catch (UnknownHostException e) {
+            System.err.println("Don't know about requested client: " + clientIP);
+            System.exit(1);
+        } catch (IOException e) {
+            System.err.println("Couldn't get I/O for the connection to: " + clientIP);
+            System.exit(1);
+        }
+    }
+
+    public void executeFileReceive(int clientPort, String destinationID, String storeLocation) {
+
+        // server socket for accepting connections
+        try (ServerSocket serverSocket = new ServerSocket(clientPort)) {
+            System.out.println("This Client is Listening on port: " + String.valueOf(clientPort));
+
+            try (Socket clientSocket = serverSocket.accept()) {
                 System.out.println("Socket connected: ");
 
-                clientOut = new PrintWriter(clientSocket.getOutputStream(), true);
-                clientIn = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                PrintWriter clientOut = new PrintWriter(clientSocket.getOutputStream(), true);
+                BufferedReader clientIn = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
                 clientOut.println("Connection established");
 
-                fromClient = clientIn.readLine();
+                String fromClient = clientIn.readLine();
 
                 System.out.println("Client-" + destinationID + " said: " + fromClient);
                 // long t1 = System.currentTimeMillis();
@@ -238,8 +205,7 @@ public class TCPClient {
                 //log(t, fromClient.getBytes().length, "SERVER_MESSAGE");
 
                 if (fromClient.contains("STARTFILE")) {
-                    transferCount += 1;
-                    String filePath = dialog.getFiles()[0].getParentFile() + "\\" + fromClient.substring(fromClient.indexOf(' '));
+                    String filePath = storeLocation + "\\" + fromClient.substring(fromClient.indexOf(' '));
                     System.out.println(filePath);
                     File file = new File(filePath);
 
@@ -264,18 +230,24 @@ public class TCPClient {
                     }
 
                     fileOutputStream.close();
-                    out.println("Transfer Complete.");
+                    clientOut.println("Transfer Complete.");
 
                     //close connections once communication is finished
-                    clientSocket.close();
                     serverSocket.close();
                 }
-
+            } catch (IOException e) {
+                System.err.println("IO error occurred while sending.");
+                throw new RuntimeException(e);
             }
+        } catch (IOException e) {
+            System.err.println("Could not listen on port: " + String.valueOf(clientPort));
+            System.exit(1);
         }
+        String fromClient;
+        String fromMe;
+        int transferCount = 0;
 
 
     }
-
 
 }
