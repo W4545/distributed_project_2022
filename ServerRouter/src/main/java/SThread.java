@@ -33,6 +33,10 @@ public class SThread extends Thread {
             while (run) {
                 // Initial sends/receives
                 String command = socketIn.readLine(); // initial read (the destination for writing)
+                if (command == null) {
+                    threadPrintErr("Null string received from socket");
+                    break;
+                }
                 logMessage("COMMAND_REQUEST", command);
                 long start = System.currentTimeMillis();
                 threadPrint("Starting execution of command \"" + command + "\"");
@@ -74,8 +78,6 @@ public class SThread extends Thread {
                         sendOutbound("IPRESPONSE: " + routingTableRecord.getIpAddress() + " " + routingTableRecord.getListenPort());
                 } else if (command.contains("GOODBYE")) {
                     run = false;
-                    if (routingTableRecord != null)
-                        TCPServerRouter.routingTable.remove(routingTableRecord);
                 } else {
                     System.out.println("Unknown command \"" + command + "\" on thread " + this.getName() + ". Ignoring");
                 }
@@ -163,8 +165,9 @@ public class SThread extends Thread {
 
 
         }// end try
-        catch (IOException e) {
-            threadPrintErr("Could not listen to socket. Socket closing");
+        catch (RuntimeException | IOException e) {
+            e.printStackTrace();
+            threadPrintErr("Error occurred during thread execution. Socket closing");
             if (!inSocket.isClosed()) {
                 try {
                     inSocket.close();
@@ -172,7 +175,10 @@ public class SThread extends Thread {
                     throw new RuntimeException(ex);
                 }
             }
+
+        } finally {
             TCPServerRouter.routingTable.remove(routingTableRecord);
+            threadPrint("Routing record removed from server, current length of records: " + TCPServerRouter.routingTable.size());
         }
     }
 

@@ -20,7 +20,7 @@ public class TCPServerRouter {
 
         Properties properties = new Properties();
 
-        properties.load(Files.newInputStream(new File(".\\ServerRouter\\config.properties").toPath()));
+        properties.load(TCPServerRouter.class.getResourceAsStream("config.properties"));
 
         groupID = properties.getProperty("groupID").charAt(0);
         int socketPort = 5555 + (((int) groupID) - 65); // port number
