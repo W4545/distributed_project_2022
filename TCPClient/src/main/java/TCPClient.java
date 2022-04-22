@@ -126,7 +126,7 @@ public class TCPClient {
         String myID = (config.getProperty("groupID").toString() + config.getProperty("clientID").toString());
         String destinationID = config.getProperty("destinationID").toString();
 
-        int SockNum = 5555 + (Integer.getInteger(groupID) - 65); // ROUTERPORTNUM port number
+        int SockNum = 5555 + (groupID.charAt(0) - 65); // ROUTERPORTNUM port number
 
         // Tries to connect to the ServerRouter
         try {
