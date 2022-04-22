@@ -96,19 +96,18 @@ public class TCPClient {
         }
 
         logOn(myID, clientPort, routerOut); //begin logon process
-        if (logOnStatus(routerIn) == true) //if IDGOOD
+        if (logOnStatus(routerIn)) //if IDGOOD
         {
-
-
             if (!config.getProperty("status").equals("listening")) //if client is requesting
             {
                 executeFileSend(destinationID, routerOut, routerIn);
             } else { //else this client is listening
-
+                executeFileReceive(clientPort, destinationID, storeLocation);
             }
         }
 
         routerSocket.close();
+        dialog.dispose();
     }
 
     public static void executeFileSend(String destinationID, PrintWriter routerOut, BufferedReader routerIn) {
@@ -182,7 +181,7 @@ public class TCPClient {
         }
     }
 
-    public void executeFileReceive(int clientPort, String destinationID, String storeLocation) {
+    public static void executeFileReceive(int clientPort, String destinationID, String storeLocation) {
 
         // server socket for accepting connections
         try (ServerSocket serverSocket = new ServerSocket(clientPort)) {
