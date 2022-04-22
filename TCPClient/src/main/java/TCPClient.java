@@ -50,7 +50,7 @@ public class TCPClient {
      */
     public static void logOn(String myID, int portNum, PrintWriter send)
     {
-        send.write("LOGON: " + myID +" "+ String.valueOf(portNum));
+        send.println("LOGON: " + myID +" "+ String.valueOf(portNum));
         System.out.println("This Client said: LOGON: "+ myID + " " + String.valueOf(portNum));
     }
 
@@ -64,7 +64,7 @@ public class TCPClient {
      */
     public static void sendRequest(String clientID, PrintWriter send)
     {
-        send.write("CLIENTIPREQUEST: "+ clientID);
+        send.println("CLIENTIPREQUEST: "+ clientID);
         System.out.println("This Client said: CLIENTIPREQUEST: " + clientID);
     }
 
@@ -76,7 +76,7 @@ public class TCPClient {
      * Checks server-router response for "IDGOOD" or "IDBAD".
      */
     public static Boolean logOnStatus(BufferedReader response) throws IOException {
-        if (response.readLine() == "IDGOOD")
+        if (response.readLine().equals("IDGOOD"))
         {
             System.out.println("Router said: IDGOOD");
             return true;
@@ -150,7 +150,7 @@ public class TCPClient {
 
             if (config.getProperty("status").toString() != "listening") //if client is requesting
             {
-                out.write(destinationID);//request destinationID to server-router
+                sendRequest(destinationID, out);//request destinationID to server-router
                 String otherClientLocation = getResponse(in); //expects destinationIP and portnumber
 
                 String clientIP = otherClientLocation.substring(otherClientLocation.indexOf(" ") + 1, otherClientLocation.indexOf(" ", 15));
