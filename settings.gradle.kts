@@ -11,3 +11,4 @@ rootProject.name = "distributed_project_2022"
 
 include("ServerRouter")
 include("TCPClient")
+include("TCPClient-GUI")
