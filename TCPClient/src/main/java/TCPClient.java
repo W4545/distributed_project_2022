@@ -237,7 +237,7 @@ public class TCPClient {
                     long endTime = System.currentTimeMillis();
 
                     long transferTime = endTime - startTime;
-                    messageLogger.log(file.getName(), file.length(), transferTime, chunkCount);
+                    fileLogger.log(file.getName(), file.length(), transferTime, chunkCount);
 
                     fileOutputStream.flush();
 
